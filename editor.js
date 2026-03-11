@@ -9,7 +9,9 @@ const pOutFormat = document.getElementById('pOutFormat');
 const pConstraints = document.getElementById('pConstraints');
 const pExIn = document.getElementById('pExIn');
 const pExOut = document.getElementById('pExOut');
+const terminalInput = document.getElementById('terminalInput');
 const consoleOutput = document.getElementById('consoleOutput');
+const terminalConsole = document.getElementById('terminalConsole');
 const runBtn = document.getElementById('runBtn');
 const submitBtn = document.getElementById('submitBtn');
 const languageSelect = document.getElementById('languageSelect');
@@ -77,6 +79,7 @@ require(['vs/editor/editor.main'], function() {
         let lang = 'python';
         if(e.target.value === '50') lang = 'c';
         else if(e.target.value === '54') lang = 'cpp';
+        else if(e.target.value === '62') lang = 'java';
         
         monaco.editor.setModelLanguage(editor.getModel(), lang);
     });
@@ -103,7 +106,8 @@ document.addEventListener('visibilitychange', () => {
 runBtn.addEventListener('click', async () => {
     runBtn.disabled = true;
     runBtn.innerText = "Running...";
-    consoleOutput.innerText = "Compiling and executing...\n";
+    consoleOutput.innerHTML += `\n\n<span style="color:var(--accent-color);">Compiling and executing...</span>`;
+    terminalConsole.scrollTop = terminalConsole.scrollHeight;
     
     try {
         const res = await fetch(`${API_BASE}/run`, {
@@ -112,24 +116,27 @@ runBtn.addEventListener('click', async () => {
             body: JSON.stringify({ 
                 code: editor.getValue(), 
                 language_id: parseInt(languageSelect.value),
-                stdin: pExIn.innerText
+                stdin: terminalInput.value
             })
         });
         const data = await res.json();
         
         if(data.stderr) {
-           consoleOutput.innerHTML = `<span style="color:var(--danger-color);">${data.stderr}</span>`;
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Error / Stderr:</strong>\n${data.stderr}`;
         } else if (data.compile_output) {
-           consoleOutput.innerHTML = `<span style="color:var(--danger-color);">${data.compile_output}</span>`;
-        } else if (data.stdout) {
-           consoleOutput.innerHTML = `<span style="color:var(--success-color);">${data.stdout}</span>\n\nExecution Time: ${data.time}s`;
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Compilation Error:</strong>\n${data.compile_output}`;
+        } else if (data.stdout !== null && data.stdout !== undefined) {
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--success-color);">Output:</strong>\n${data.stdout}\n<span style="color:var(--text-muted); font-size:0.8em;">Execution Time: ${data.time}s</span>`;
+        } else if (data.message) {
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Message:</strong>\n${data.message}`;
         } else {
-           consoleOutput.innerHTML = "No output.";
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Status:</strong> ${data.status ? data.status.description : 'Unknown Error'}\nNo output returned.`;
         }
     } catch (e) {
-        consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Server error during execution.</span>`;
+        consoleOutput.innerHTML += `\n\n<span style="color:var(--danger-color);">Server error or Judge0 API is unreachable.</span>`;
     }
     
+    terminalConsole.scrollTop = terminalConsole.scrollHeight;
     runBtn.disabled = false;
     runBtn.innerText = "Run Code";
 });

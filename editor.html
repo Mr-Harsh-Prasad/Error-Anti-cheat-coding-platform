@@ -134,6 +134,7 @@
             <select id="languageSelect">
               <option value="50">C (GCC 9.2.0)</option>
               <option value="54">C++ (GCC 9.2.0)</option>
+              <option value="62">Java (OpenJDK 13.0.1)</option>
               <option value="71" selected>Python (3.8.1)</option>
             </select>
             <div style="display:flex; gap: 1rem;">
@@ -144,8 +145,9 @@
           
           <div id="editorContainer"></div>
           
-          <div class="console-panel" id="consoleOutput">
-            Welcome to Error 1.0 Console. Output will appear here.
+          <div class="console-panel" id="terminalConsole" style="padding: 0; display: flex; flex-direction: column; overflow-y: auto;">
+            <textarea id="terminalInput" placeholder="Enter input here (stdin)..." style="width: 100%; min-height: 80px; background: transparent; border: none; border-bottom: 1px dashed var(--border-color); color: var(--text-main); font-family: var(--font-mono); outline: none; padding: 1rem; resize: vertical;"></textarea>
+            <div id="consoleOutput" style="padding: 1rem; flex: 1;">Welcome to Error 1.0 Terminal.</div>
           </div>
         </div>
       </div>

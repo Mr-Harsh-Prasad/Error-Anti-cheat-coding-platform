@@ -110,6 +110,47 @@
             <button class="btn btn-primary" id="addProbBtn">Publish Problem</button>
           </div>
 
+          <!-- Submissions Panel -->
+          <div class="admin-panel" style="grid-column: 1 / -1;">
+            <h3>Live Submissions</h3>
+            <button class="btn btn-secondary" id="refreshSubBtn" style="margin-bottom:1rem;">Refresh Data</button>
+            <div style="overflow-x:auto;">
+              <table style="width:100%; text-align:left; border-collapse:collapse; font-size: 0.9rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted);">
+                    <th style="padding:0.5rem;">ID</th>
+                    <th style="padding:0.5rem;">Candidate</th>
+                    <th style="padding:0.5rem;">Problem</th>
+                    <th style="padding:0.5rem;">Lang</th>
+                    <th style="padding:0.5rem;">Verdict</th>
+                    <th style="padding:0.5rem;">Time</th>
+                  </tr>
+                </thead>
+                <tbody id="subTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Anti-Cheat Panel -->
+          <div class="admin-panel" style="grid-column: 1 / -1;">
+            <h3>Live Anti-Cheat Checker</h3>
+            <button class="btn btn-danger" id="refreshCheatBtn" style="margin-bottom:1rem; border:1px solid var(--danger-color); color:var(--danger-color); background:transparent;">Refresh Data</button>
+            <div style="overflow-x:auto;">
+              <table style="width:100%; text-align:left; border-collapse:collapse; font-size: 0.9rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted);">
+                    <th style="padding:0.5rem;">Log ID</th>
+                    <th style="padding:0.5rem;">Candidate Name</th>
+                    <th style="padding:0.5rem;">Violation Type</th>
+                    <th style="padding:0.5rem;">Violation Count</th>
+                    <th style="padding:0.5rem;">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="cheatTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </main>
     </div>

@@ -145,8 +145,15 @@ app.post('/api/auth', async (req, res) => {
 });
 
 // 8. Anti-Cheat Logger
-app.post('/api/anti-cheat', (req, res) => {
-    res.json({ success: true });
+app.post('/api/anti-cheat', async (req, res) => {
+    const { user_id, event, count } = req.body;
+    try {
+        await pool.query('INSERT INTO AntiCheatLogs (user_id, event, count) VALUES ($1, $2, $3)', [user_id, event, count]);
+        res.json({ success: true });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to log' });
+    }
 });
 
 // ==========================================
@@ -199,6 +206,37 @@ app.post('/api/admin/users', async (req, res) => {
         if (!(await checkAdmin(admin_id))) return res.status(403).json({error: 'Unauthorized'});
         await pool.query('INSERT INTO Users (name, email) VALUES ($1, $2) ON CONFLICT DO NOTHING', [name, email]);
         res.json({ success: true });
+    } catch (e) { res.status(500).json({error: e.message}) }
+});
+
+// Admin Get Submissions
+app.post('/api/admin/submissions', async (req, res) => {
+    const { admin_id } = req.body;
+    try {
+        if (!(await checkAdmin(admin_id))) return res.status(403).json({error: 'Unauthorized'});
+        const result = await pool.query(`
+            SELECT s.id, u.name as candidate, p.title as problem, s.language, s.verdict, s.created_at
+            FROM Submissions s 
+            JOIN Users u ON s.user_id = u.id 
+            JOIN Problems p ON s.problem_id = p.id
+            ORDER BY s.created_at DESC LIMIT 100
+        `);
+        res.json({ success: true, submissions: result.rows });
+    } catch (e) { res.status(500).json({error: e.message}) }
+});
+
+// Admin Get Anti-Cheat Logs
+app.post('/api/admin/anti-cheat', async (req, res) => {
+    const { admin_id } = req.body;
+    try {
+        if (!(await checkAdmin(admin_id))) return res.status(403).json({error: 'Unauthorized'});
+        const result = await pool.query(`
+            SELECT a.id, u.name as candidate, a.event, a.count, a.created_at
+            FROM AntiCheatLogs a
+            JOIN Users u ON a.user_id = u.id
+            ORDER BY a.created_at DESC LIMIT 100
+        `);
+        res.json({ success: true, logs: result.rows });
     } catch (e) { res.status(500).json({error: e.message}) }
 });
 

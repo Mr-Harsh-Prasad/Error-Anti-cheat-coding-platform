@@ -22,6 +22,8 @@ loginBtn.addEventListener('click', async () => {
             loginView.style.display = 'none';
             dashboardView.style.display = 'block';
             alert("Admin Login Successful!");
+            fetchSubmissions();
+            fetchCheatLogs();
         } else {
             alert(data.error);
         }
@@ -96,3 +98,55 @@ document.getElementById('addProbBtn').addEventListener('click', async () => {
         else alert(data.error);
     } catch(err) { alert("Action failed"); }
 });
+
+// Fetch Submissions
+async function fetchSubmissions() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/submissions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_id: adminId })
+        });
+        const data = await res.json();
+        if(data.success) {
+            const tbody = document.getElementById('subTableBody');
+            tbody.innerHTML = data.submissions.map(s => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:0.5rem;">#${s.id}</td>
+                    <td style="padding:0.5rem; font-weight:600;">${s.candidate}</td>
+                    <td style="padding:0.5rem; color:var(--accent-color);">${s.problem}</td>
+                    <td style="padding:0.5rem;">${s.language}</td>
+                    <td style="padding:0.5rem; color:${s.verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)'}">${s.verdict}</td>
+                    <td style="padding:0.5rem; color:var(--text-muted);">${new Date(s.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    } catch(err) { console.error(err); }
+}
+
+// Fetch Cheat Logs
+async function fetchCheatLogs() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/anti-cheat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_id: adminId })
+        });
+        const data = await res.json();
+        if(data.success) {
+            const tbody = document.getElementById('cheatTableBody');
+            tbody.innerHTML = data.logs.map(l => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:0.5rem;">#${l.id}</td>
+                    <td style="padding:0.5rem; font-weight:600;">${l.candidate}</td>
+                    <td style="padding:0.5rem;">${l.event}</td>
+                    <td style="padding:0.5rem; font-weight:800; color:var(--danger-color);">${l.count}</td>
+                    <td style="padding:0.5rem; color:var(--text-muted);">${new Date(l.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    } catch(err) { console.error(err); }
+}
+
+if(document.getElementById('refreshSubBtn')) document.getElementById('refreshSubBtn').addEventListener('click', fetchSubmissions);
+if(document.getElementById('refreshCheatBtn')) document.getElementById('refreshCheatBtn').addEventListener('click', fetchCheatLogs);
