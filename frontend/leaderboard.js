@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'https://error-anti-cheat-coding-platform.vercel.app/api';
 const leaderboardBody = document.getElementById('leaderboardBody');
 
 async function fetchLeaderboard() {
