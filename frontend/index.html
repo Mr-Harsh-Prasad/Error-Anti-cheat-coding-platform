@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error 1.0 – The Initial Crash</title>
+    <!-- Modern Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.汇om" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <!-- Background Elements for aesthetics -->
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    
+    <div class="app-container">
+      <!-- Navbar -->
+      <nav class="navbar">
+        <div class="logo">
+          <span class="neon-text">Error 1.0</span>
+        </div>
+        <div class="nav-links">
+          <a href="#" id="rulesLink">Rules</a>
+          <a href="#" id="leaderboardLink">Leaderboard</a>
+        </div>
+      </nav>
+
+      <!-- Main Landing Content -->
+      <main class="landing-content">
+        <header class="hero">
+          <h2 class="subtitle">GFG Cloud Computing Club Presents</h2>
+          <h1 class="title glow-text">Error 1.0 <br/> <span class="highlight">— The Initial Crash —</span></h1>
+          <p class="description">
+            A high-stakes coding contest to test your logic, speed, and endurance. Get ready to face the crash.
+          </p>
+        </header>
+
+        <!-- Timer Section -->
+        <section class="timer-section">
+          <h3 id="timerLabel">Contest Starts In</h3>
+          <div class="countdown" id="countdown">
+            <div class="time-box">
+              <span id="days">00</span>
+              <label>Days</label>
+            </div>
+            <div class="time-box">
+              <span id="hours">00</span>
+              <label>Hours</label>
+            </div>
+            <div class="time-box">
+              <span id="minutes">00</span>
+              <label>Minutes</label>
+            </div>
+            <div class="time-box">
+              <span id="seconds">00</span>
+              <label>Seconds</label>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="btn btn-primary" id="enterContestBtn" disabled>Enter Contest</button>
+            <button class="btn btn-secondary" id="openRulesBtn">View Rules</button>
+          </div>
+          
+          <div id="statusMessage" class="status-msg"></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Rules Modal -->
+    <div class="modal-overlay" id="rulesModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Contest Rules</h2>
+          <button class="close-btn" id="closeRulesBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <ul>
+            <li>Contest duration is exactly 2 hours (June 13, 2026, 2:00 PM - 4:00 PM).</li>
+            <li>Tab switching is monitored and logged. Multiple switches may lead to disqualification.</li>
+            <li>Copying and pasting inside the editor is strictly disabled.</li>
+            <li>Right-click is disabled to prevent cheating.</li>
+            <li>Each correct submission grants 100 points. Ties resolved by time.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
