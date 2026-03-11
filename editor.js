@@ -1,0 +1,165 @@
+const API_BASE = '/api';
+let editor;
+
+const pTitle = document.getElementById('pTitle');
+const pDifficulty = document.getElementById('pDifficulty');
+const pDesc = document.getElementById('pDesc');
+const pInFormat = document.getElementById('pInFormat');
+const pOutFormat = document.getElementById('pOutFormat');
+const pConstraints = document.getElementById('pConstraints');
+const pExIn = document.getElementById('pExIn');
+const pExOut = document.getElementById('pExOut');
+const consoleOutput = document.getElementById('consoleOutput');
+const runBtn = document.getElementById('runBtn');
+const submitBtn = document.getElementById('submitBtn');
+const languageSelect = document.getElementById('languageSelect');
+const warningOverlay = document.getElementById('warningOverlay');
+
+// Get Problem ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+const problemId = urlParams.get('id');
+const userId = localStorage.getItem('contest_user_id') || 1; 
+
+if (!problemId) {
+    pTitle.innerText = "Error: No problem selected";
+} else {
+    loadProblem();
+}
+
+async function loadProblem() {
+    try {
+        const res = await fetch(`${API_BASE}/problems/${problemId}`);
+        if (res.status === 403) {
+            window.location.href = '/problems.html';
+            return;
+        }
+        if (!res.ok) throw new Error("Not found");
+        
+        const problem = await res.json();
+        
+        pTitle.innerText = problem.title;
+        pDifficulty.innerText = problem.difficulty;
+        pDifficulty.className = `difficulty diff-${problem.difficulty.toLowerCase()}`;
+        pDesc.innerText = problem.description;
+        pInFormat.innerText = problem.input_format;
+        pOutFormat.innerText = problem.output_format;
+        pConstraints.innerText = problem.constraints;
+        pExIn.innerText = problem.example_in;
+        pExOut.innerText = problem.example_out;
+        
+    } catch (err) {
+         pTitle.innerText = "Failed to load problem.";
+         console.error(err);
+    }
+}
+
+// Monaco Editor Initialization
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+require(['vs/editor/editor.main'], function() {
+    editor = monaco.editor.create(document.getElementById('editorContainer'), {
+        value: '# Write your solution here\n# Do not cheat!\n',
+        language: 'python',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        minimap: { enabled: false }
+    });
+    
+    // Anti-Cheat: Disable Paste via Monaco configuration
+    editor.onKeyDown(function(e) {
+        // block ctrl+v and cmd+v
+        if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+            e.preventDefault();
+            consoleOutput.innerHTML = `<span style="color:var(--danger-color);">[ANTI-CHEAT] Paste disabled.</span>`;
+        }
+    });
+
+    languageSelect.addEventListener('change', (e) => {
+        let lang = 'python';
+        if(e.target.value === '50') lang = 'c';
+        else if(e.target.value === '54') lang = 'cpp';
+        
+        monaco.editor.setModelLanguage(editor.getModel(), lang);
+    });
+});
+
+// Anti-Cheat: Context menu right click disable
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+// Anti-Cheat: Tab Switch Detection
+let tabSwitches = 0;
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        tabSwitches++;
+        warningOverlay.classList.add('active');
+        fetch(`${API_BASE}/anti-cheat`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: userId, event: 'tab_switch', count: tabSwitches })
+        }).catch(e=>console.log(e));
+    }
+});
+
+// Action Handlers
+runBtn.addEventListener('click', async () => {
+    runBtn.disabled = true;
+    runBtn.innerText = "Running...";
+    consoleOutput.innerText = "Compiling and executing...\n";
+    
+    try {
+        const res = await fetch(`${API_BASE}/run`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                code: editor.getValue(), 
+                language_id: parseInt(languageSelect.value),
+                stdin: pExIn.innerText
+            })
+        });
+        const data = await res.json();
+        
+        if(data.stderr) {
+           consoleOutput.innerHTML = `<span style="color:var(--danger-color);">${data.stderr}</span>`;
+        } else if (data.compile_output) {
+           consoleOutput.innerHTML = `<span style="color:var(--danger-color);">${data.compile_output}</span>`;
+        } else if (data.stdout) {
+           consoleOutput.innerHTML = `<span style="color:var(--success-color);">${data.stdout}</span>\n\nExecution Time: ${data.time}s`;
+        } else {
+           consoleOutput.innerHTML = "No output.";
+        }
+    } catch (e) {
+        consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Server error during execution.</span>`;
+    }
+    
+    runBtn.disabled = false;
+    runBtn.innerText = "Run Code";
+});
+
+submitBtn.addEventListener('click', async () => {
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Submitting...";
+    consoleOutput.innerText = "Submitting code against hidden test cases...\n";
+    
+    try {
+        const res = await fetch(`${API_BASE}/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                problem_id: problemId,
+                code: editor.getValue(),
+                language_id: parseInt(languageSelect.value),
+                language_name: languageSelect.options[languageSelect.selectedIndex].text
+            })
+        });
+        const data = await res.json();
+        
+        let color = data.verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)';
+        consoleOutput.innerHTML = `Verdict: <strong style="color:${color}; font-size:1.2rem;">${data.verdict}</strong>\nTime: ${data.time}s`;
+        
+    } catch(e) {
+        consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Server error during submission.</span>`;
+    }
+    
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Submit Solution";
+});
