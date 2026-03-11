@@ -176,6 +176,10 @@ app.post('/api/anti-cheat', (req, res) => {
     res.json({ success: true });
 });
 
-app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Server listening on port ${port}`);
+    });
+}
+
+module.exports = app;
