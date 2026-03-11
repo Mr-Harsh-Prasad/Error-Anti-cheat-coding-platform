@@ -25,6 +25,11 @@ const isContestActive = () => {
     return now >= CONTEST_START && now <= CONTEST_END;
 };
 
+// Root route so Vercel doesn't show 404 on the main link
+app.get('/', (req, res) => {
+    res.send('<h1>Error 1.0 Backend is Running!</h1><p>The API is active at /api</p>');
+});
+
 // 1. Time API
 app.get('/api/time', (req, res) => {
     res.json({ 
