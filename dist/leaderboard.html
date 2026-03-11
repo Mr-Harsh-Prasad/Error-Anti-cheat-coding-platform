@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboard - Error 1.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/leaderboard-uE7e1Bn-.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/style-oXTNnaZS.js">
+    <link rel="stylesheet" crossorigin href="/assets/style-uKmCSlzQ.css">
+  </head>
+  <body>
+    <div class="glow glow-2"></div>
+    
+    <div class="app-container">
+      <nav class="navbar">
+        <div class="logo">
+          <a href="/" style="text-decoration:none;"><span class="neon-text">Error 1.0</span></a>
+        </div>
+        <div class="nav-links">
+          <a href="/problems.html">Problems</a>
+        </div>
+      </nav>
+
+      <main style="flex:1;">
+        <h1 style="margin-bottom: 2rem;text-align:center;">Real-Time Leaderboard</h1>
+        <div class="leaderboard-container">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Participant</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+      </main>
+    </div>
+
+    <style>
+      .leaderboard-container {
+        background: var(--panel-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        overflow: hidden;
+      }
+      .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .leaderboard-table th, .leaderboard-table td {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .leaderboard-table th {
+        background: rgba(0,0,0,0.3);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+      }
+      .leaderboard-table tr:hover {
+        background: rgba(255,255,255,0.05);
+      }
+      .rank-1 { color: #ffd700; font-weight: bold; text-shadow: 0 0 10px #ffd700; }
+      .rank-2 { color: #c0c0c0; font-weight: bold; }
+      .rank-3 { color: #cd7f32; font-weight: bold; }
+    </style>
+  </body>
+</html>

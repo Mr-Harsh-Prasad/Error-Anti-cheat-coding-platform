@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { Pool } = require('pg');
 require('dotenv').config();
 
@@ -31,20 +30,6 @@ const isContestActive = async () => {
         return true; // fail open for testing if settings table missing
     }
 };
-
-// Root route serves the login/landing page unconditionally
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// App static file serving
-app.use(express.static(__dirname));
-
-// Ensure other html routes are accessible cleanly 
-app.get('/problems.html', (req, res) => res.sendFile(path.join(__dirname, 'problems.html')));
-app.get('/editor.html', (req, res) => res.sendFile(path.join(__dirname, 'editor.html')));
-app.get('/leaderboard.html', (req, res) => res.sendFile(path.join(__dirname, 'leaderboard.html')));
-app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 
 // 1. Time API
 app.get('/api/time', async (req, res) => {

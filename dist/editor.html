@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor - Error 1.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
+    
+    <!-- Monaco Editor AMD loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    
+    <style>
+      .editor-layout {
+        display: flex;
+        gap: 1.5rem;
+        height: 80vh;
+      }
+      .problem-panel {
+        flex: 1;
+        background: var(--panel-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+      .code-panel {
+        flex: 1.5;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      select {
+        background: var(--bg-color);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-family: var(--font-main);
+      }
+      #editorContainer {
+        flex: 1;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        overflow: hidden;
+      }
+      .console-panel {
+        height: 200px;
+        background: #000;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        font-family: var(--font-mono);
+        color: var(--text-muted);
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+      .warning-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 51, 102, 0.9);
+        color: white;
+        z-index: 9999;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 2rem;
+      }
+      .warning-overlay.active {
+        display: flex;
+      }
+      .warning-overlay h1 { font-size: 4rem; margin-bottom: 1rem; }
+      .warning-overlay p { font-size: 1.5rem; max-width: 600px; line-height: 1.5; }
+      .warning-overlay button { margin-top: 2rem; }
+    </style>
+    <script type="module" crossorigin src="/assets/editor-CaMv8O3b.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/style-oXTNnaZS.js">
+    <link rel="stylesheet" crossorigin href="/assets/style-uKmCSlzQ.css">
+  </head>
+  <body>
+    <!-- Anti-Cheat Warning Modal -->
+    <div class="warning-overlay" id="warningOverlay">
+      <h1>WARNING!</h1>
+      <p>Tab switching or leaving the page is prohibited during the contest. Further violations will lead to disqualification.</p>
+      <button class="btn btn-primary" onclick="this.parentElement.classList.remove('active')">I Understand</button>
+    </div>
+
+    <div class="glow glow-1" style="top: -20%; left: -20%;"></div>
+
+    <div class="app-container" style="max-width: 1600px;">
+      <nav class="navbar" style="margin-bottom: 2rem;">
+        <div class="logo">
+          <a href="/problems.html" style="text-decoration:none;"><span class="neon-text">Error 1.0</span></a>
+        </div>
+        <div class="nav-links" style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--accent-color);">
+          <span id="timeLeft">Loading timer...</span>
+        </div>
+      </nav>
+
+      <div class="editor-layout">
+        <!-- Problem Description -->
+        <div class="problem-panel">
+          <h2 id="pTitle" style="margin-bottom: 0.5rem;">Loading Problem...</h2>
+          <span id="pDifficulty" class="difficulty"></span>
+          
+          <div style="margin-top: 2rem; line-height: 1.6;">
+            <h3>Description</h3>
+            <p id="pDesc" style="color:var(--text-muted); margin-bottom: 1.5rem;"></p>
+            
+            <h3>Input Format</h3>
+            <p id="pInFormat" style="color:var(--text-muted); margin-bottom: 1.5rem;"></p>
+            
+            <h3>Output Format</h3>
+            <p id="pOutFormat" style="color:var(--text-muted); margin-bottom: 1.5rem;"></p>
+            
+            <h3>Constraints</h3>
+            <p id="pConstraints" style="color:var(--text-muted); margin-bottom: 1.5rem;"></p>
+            
+            <h3>Example Input</h3>
+            <pre id="pExIn" style="background:#000; padding:1rem; border-radius:0.5rem; margin-bottom: 1rem;"></pre>
+            
+            <h3>Example Output</h3>
+            <pre id="pExOut" style="background:#000; padding:1rem; border-radius:0.5rem;"></pre>
+          </div>
+        </div>
+
+        <!-- Code Editor & Console -->
+        <div class="code-panel">
+          <div class="editor-header">
+            <select id="languageSelect">
+              <option value="50">C (GCC 9.2.0)</option>
+              <option value="54">C++ (GCC 9.2.0)</option>
+              <option value="71" selected>Python (3.8.1)</option>
+            </select>
+            <div style="display:flex; gap: 1rem;">
+              <button id="runBtn" class="btn btn-secondary">Run Code</button>
+              <button id="submitBtn" class="btn btn-primary">Submit Solution</button>
+            </div>
+          </div>
+          
+          <div id="editorContainer"></div>
+          
+          <div class="console-panel" id="consoleOutput">
+            Welcome to Error 1.0 Console. Output will appear here.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

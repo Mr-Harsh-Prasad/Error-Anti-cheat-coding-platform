@@ -2,11 +2,10 @@
   "name": "error-1.0-contest",
   "version": "1.0.0",
   "description": "Error 1.0 Coding Contest Platform",
-  "main": "server.js",
   "scripts": {
     "dev:frontend": "vite",
     "build": "vite build",
-    "start": "node server.js"
+    "start": "node api/index.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
