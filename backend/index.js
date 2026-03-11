@@ -15,9 +15,9 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Contest Time Configuration (Defaults to 13th June 2026, 2PM to 4PM IST)
-const CONTEST_START = new Date(process.env.CONTEST_START_TIME || '2026-06-13T14:00:00+05:30').getTime();
-const CONTEST_END = new Date(process.env.CONTEST_END_TIME || '2026-06-13T16:00:00+05:30').getTime();
+// Contest Time Configuration (Temporarily Active for Testing!)
+const CONTEST_START = new Date(process.env.CONTEST_START_TIME || '2026-03-10T00:00:00+05:30').getTime();
+const CONTEST_END = new Date(process.env.CONTEST_END_TIME || '2026-03-20T00:00:00+05:30').getTime();
 
 // Helper: Check if contest is active
 const isContestActive = () => {
