@@ -242,6 +242,16 @@ app.post('/api/admin/anti-cheat', async (req, res) => {
     } catch (e) { res.status(500).json({error: e.message}) }
 });
 
+// Admin Delete Anti-Cheat Log
+app.post('/api/admin/anti-cheat/delete', async (req, res) => {
+    const { admin_id, log_id } = req.body;
+    try {
+        if (!(await checkAdmin(admin_id))) return res.status(403).json({error: 'Unauthorized'});
+        await pool.query('DELETE FROM AntiCheatLogs WHERE id = $1', [parseInt(log_id)]);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({error: e.message}) }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(port, () => {
         console.log(`Server listening on port ${port}`);

@@ -142,11 +142,28 @@ async function fetchCheatLogs() {
                     <td style="padding:0.5rem;">${l.event}</td>
                     <td style="padding:0.5rem; font-weight:800; color:var(--danger-color);">${l.count}</td>
                     <td style="padding:0.5rem; color:var(--text-muted);">${new Date(l.created_at).toLocaleString()}</td>
+                    <td style="padding:0.5rem;">
+                       <button onclick="window.deleteCheatLog(${l.id})" style="background:var(--danger-color); color:white; border:none; padding:0.25rem 0.5rem; border-radius:0.25rem; cursor:pointer;">Delete</button>
+                    </td>
                 </tr>
             `).join('');
         }
     } catch(err) { console.error(err); }
 }
+
+window.deleteCheatLog = async (logId) => {
+    if(!confirm("Are you sure you want to delete this log?")) return;
+    try {
+        const res = await fetch(`${API_BASE}/admin/anti-cheat/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_id: adminId, log_id: logId })
+        });
+        const data = await res.json();
+        if(data.success) fetchCheatLogs();
+        else alert(data.error);
+    } catch(err) { alert("Failed to delete log"); }
+};
 
 if(document.getElementById('refreshSubBtn')) document.getElementById('refreshSubBtn').addEventListener('click', fetchSubmissions);
 if(document.getElementById('refreshCheatBtn')) document.getElementById('refreshCheatBtn').addEventListener('click', fetchCheatLogs);
