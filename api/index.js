@@ -90,7 +90,8 @@ app.post('/api/run', async (req, res) => {
         if (!response.ok) throw new Error(`Judge0 API error: ${response.status}`);
         res.json(await response.json());
     } catch (err) {
-        res.status(500).json({ error: 'Execution Error' });
+        console.error("Judge0 Error:", err.message);
+        res.status(500).json({ error: `Compiler backend error: ${err.message}. Please Check JUDGE0_API_URL.` });
     }
 });
 
@@ -116,6 +117,7 @@ app.post('/api/submit', async (req, res) => {
         }
         res.json({ submission_id: subRes.rows[0].id, verdict, time: maxTime });
     } catch (err) {
+        console.error("Submit Error:", err.message);
         res.status(500).json({ error: 'Submission Error' });
     }
 });
@@ -215,11 +217,11 @@ app.post('/api/admin/submissions', async (req, res) => {
     try {
         if (!(await checkAdmin(admin_id))) return res.status(403).json({error: 'Unauthorized'});
         const result = await pool.query(`
-            SELECT s.id, u.name as candidate, p.title as problem, s.language, s.verdict, s.created_at
+            SELECT s.id, u.name as candidate, p.title as problem, s.language, s.verdict, s.submitted_at as created_at
             FROM Submissions s 
             JOIN Users u ON s.user_id = u.id 
             JOIN Problems p ON s.problem_id = p.id
-            ORDER BY s.created_at DESC LIMIT 100
+            ORDER BY s.submitted_at DESC LIMIT 100
         `);
         res.json({ success: true, submissions: result.rows });
     } catch (e) { res.status(500).json({error: e.message}) }

@@ -121,7 +121,9 @@ runBtn.addEventListener('click', async () => {
         });
         const data = await res.json();
         
-        if(data.stderr) {
+        if (data.error) {
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Server Error:</strong>\n${data.error}`;
+        } else if(data.stderr) {
            consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Error / Stderr:</strong>\n${data.stderr}`;
         } else if (data.compile_output) {
            consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Compilation Error:</strong>\n${data.compile_output}`;
