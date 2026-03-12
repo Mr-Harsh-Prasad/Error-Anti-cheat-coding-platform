@@ -99,7 +99,10 @@ document.getElementById('addProbBtn').addEventListener('click', async () => {
     } catch(err) { alert("Action failed"); }
 });
 
-// Fetch Submissions
+// =============================================
+// LIVE SUBMISSIONS — Grouped by Candidate
+// =============================================
+
 async function fetchSubmissions() {
     try {
         const res = await fetch(`${API_BASE}/admin/submissions`, {
@@ -108,23 +111,149 @@ async function fetchSubmissions() {
             body: JSON.stringify({ admin_id: adminId })
         });
         const data = await res.json();
-        if(data.success) {
-            const tbody = document.getElementById('subTableBody');
-            tbody.innerHTML = data.submissions.map(s => `
-                <tr style="border-bottom:1px solid var(--border-color);">
-                    <td style="padding:0.5rem;">#${s.id}</td>
-                    <td style="padding:0.5rem; font-weight:600;">${s.candidate}</td>
-                    <td style="padding:0.5rem; color:var(--accent-color);">${s.problem}</td>
-                    <td style="padding:0.5rem;">${s.language}</td>
-                    <td style="padding:0.5rem; color:${s.verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)'}">${s.verdict}</td>
-                    <td style="padding:0.5rem; color:var(--text-muted);">${new Date(s.created_at).toLocaleString()}</td>
-                </tr>
-            `).join('');
+        if (!data.success) return;
+
+        const tbody = document.getElementById('subTableBody');
+        tbody.innerHTML = '';
+
+        if (data.grouped.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="padding:1rem; color:var(--text-muted); text-align:center;">No submissions yet.</td></tr>`;
+            return;
         }
+
+        data.grouped.forEach(candidate => {
+            const candId = `cand-${candidate.candidate_id}`;
+
+            // Count verdict colors for summary badge
+            const accepted = candidate.submissions.filter(s => s.verdict === 'Accepted').length;
+            const wrong = candidate.submissions.length - accepted;
+            const summaryBadges = `
+                <span style="background:rgba(0,255,204,0.15); color:var(--success-color); border:1px solid rgba(0,255,204,0.3); border-radius:1rem; padding:0.1rem 0.6rem; font-size:0.78rem; margin-left:0.5rem;">${accepted} AC</span>
+                ${wrong > 0 ? `<span style="background:rgba(255,51,102,0.15); color:var(--danger-color); border:1px solid rgba(255,51,102,0.3); border-radius:1rem; padding:0.1rem 0.6rem; font-size:0.78rem; margin-left:0.3rem;">${wrong} WA</span>` : ''}
+            `;
+
+            // Parent expandable row
+            const parentRow = document.createElement('tr');
+            parentRow.className = 'candidate-row';
+            parentRow.dataset.target = candId;
+            parentRow.innerHTML = `
+                <td style="padding:0.6rem 0.5rem; width:2rem;">
+                    <span class="expand-icon" data-id="${candId}">▶</span>
+                </td>
+                <td style="padding:0.6rem 0.5rem; font-weight:600;">${escapeHtml(candidate.candidate)}</td>
+                <td style="padding:0.6rem 0.5rem;">
+                    <span style="font-family:var(--font-mono);">${candidate.total}</span>
+                    ${summaryBadges}
+                </td>
+                <td style="padding:0.6rem 0.5rem;">
+                    <button class="expand-btn" data-id="${candId}" style="background:transparent; border:1px solid var(--border-color); color:var(--text-muted); padding:0.2rem 0.75rem; border-radius:0.25rem; cursor:pointer; font-size:0.82rem; transition:all 0.2s;">Expand</button>
+                </td>
+            `;
+            tbody.appendChild(parentRow);
+
+            // Detail rows container (hidden by default)
+            const detailRow = document.createElement('tr');
+            detailRow.id = candId;
+            detailRow.className = 'detail-row';
+            detailRow.style.display = 'none';
+
+            const detailCell = document.createElement('td');
+            detailCell.colSpan = 4;
+            detailCell.style.padding = '0';
+
+            const detailTable = document.createElement('table');
+            detailTable.style.cssText = 'width:100%; border-collapse:collapse;';
+
+            candidate.submissions.forEach((sub, idx) => {
+                const isLast = idx === candidate.submissions.length - 1;
+                const verdictColor = sub.verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)';
+                const prefix = isLast ? '└' : '├';
+                const tr = document.createElement('tr');
+                tr.className = 'sub-detail-row';
+                tr.innerHTML = `
+                    <td style="padding:0.4rem 0.5rem 0.4rem 2rem; color:var(--text-muted); width:1.5rem; font-family:var(--font-mono);">${prefix}</td>
+                    <td style="padding:0.4rem 0.5rem; color:var(--accent-color); font-weight:500;">${escapeHtml(sub.problem)}</td>
+                    <td style="padding:0.4rem 0.5rem; color:var(--text-muted);">${escapeHtml(sub.language)}</td>
+                    <td style="padding:0.4rem 0.5rem; color:${verdictColor}; font-weight:600;">${escapeHtml(sub.verdict)}</td>
+                    <td style="padding:0.4rem 0.5rem; color:var(--text-muted); font-size:0.8rem;">${new Date(sub.submitted_at).toLocaleString()}</td>
+                    <td style="padding:0.4rem 0.5rem;">
+                        <button onclick="window.viewCode(${sub.id}, '${escapeHtml(sub.language)}', '${escapeHtml(sub.problem)}')" 
+                            style="background:transparent; border:1px solid var(--accent-color); color:var(--accent-color); padding:0.2rem 0.6rem; border-radius:0.25rem; cursor:pointer; font-size:0.8rem; transition:all 0.2s;"
+                            onmouseover="this.style.background='rgba(0,255,204,0.1)'" 
+                            onmouseout="this.style.background='transparent'">
+                            View Code
+                        </button>
+                    </td>
+                `;
+                detailTable.appendChild(tr);
+            });
+
+            detailCell.appendChild(detailTable);
+            detailRow.appendChild(detailCell);
+            tbody.appendChild(detailRow);
+
+            // Click handler on the parent row / expand button
+            const toggleExpand = () => {
+                const icon = document.querySelector(`.expand-icon[data-id="${candId}"]`);
+                const btn = document.querySelector(`.expand-btn[data-id="${candId}"]`);
+                const isOpen = detailRow.style.display !== 'none';
+                if (isOpen) {
+                    detailRow.style.display = 'none';
+                    icon.classList.remove('expanded');
+                    btn.textContent = 'Expand';
+                    btn.style.color = 'var(--text-muted)';
+                    btn.style.borderColor = 'var(--border-color)';
+                } else {
+                    detailRow.style.display = 'table-row';
+                    icon.classList.add('expanded');
+                    btn.textContent = 'Collapse';
+                    btn.style.color = 'var(--accent-color)';
+                    btn.style.borderColor = 'var(--accent-color)';
+                }
+            };
+
+            parentRow.addEventListener('click', toggleExpand);
+        });
+
     } catch(err) { console.error(err); }
 }
 
-// Fetch Cheat Logs
+// =============================================
+// VIEW CODE MODAL — Lazy Load
+// =============================================
+
+const codeModal = document.getElementById('codeModal');
+const closeCodeModal = document.getElementById('closeCodeModal');
+
+closeCodeModal.addEventListener('click', () => codeModal.classList.remove('active'));
+codeModal.addEventListener('click', (e) => { if (e.target === codeModal) codeModal.classList.remove('active'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') codeModal.classList.remove('active'); });
+
+window.viewCode = async (submissionId, language, problemName) => {
+    const title = document.getElementById('codeModalTitle');
+    const codeEl = document.getElementById('codeModalCode');
+
+    title.textContent = `${problemName} — ${language}`;
+    codeEl.textContent = 'Loading...';
+    codeModal.classList.add('active');
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/submissions/${submissionId}/code?admin_id=${adminId}`);
+        const data = await res.json();
+        if (data.code !== undefined) {
+            codeEl.textContent = data.code;
+        } else {
+            codeEl.textContent = data.error || 'Failed to load code.';
+        }
+    } catch(err) {
+        codeEl.textContent = 'Server error loading code.';
+    }
+};
+
+// =============================================
+// ANTI-CHEAT LOGS (unchanged)
+// =============================================
+
 async function fetchCheatLogs() {
     try {
         const res = await fetch(`${API_BASE}/admin/anti-cheat`, {
@@ -167,3 +296,14 @@ window.deleteCheatLog = async (logId) => {
 
 if(document.getElementById('refreshSubBtn')) document.getElementById('refreshSubBtn').addEventListener('click', fetchSubmissions);
 if(document.getElementById('refreshCheatBtn')) document.getElementById('refreshCheatBtn').addEventListener('click', fetchCheatLogs);
+
+// Helper: Escape HTML to prevent XSS in admin display
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

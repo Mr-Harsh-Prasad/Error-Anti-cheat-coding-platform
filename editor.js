@@ -162,13 +162,28 @@ submitBtn.addEventListener('click', async () => {
         });
         const data = await res.json();
         
+        if (res.status === 409) {
+            // Already submitted — show error and keep button permanently disabled
+            consoleOutput.innerHTML = `<span style="color:var(--danger-color); font-size:1.1rem; font-weight:600;">⚠ ${data.error}</span>`;
+            submitBtn.innerText = "Already Submitted";
+            // Keep button disabled
+            return;
+        }
+
         let color = data.verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)';
         consoleOutput.innerHTML = `Verdict: <strong style="color:${color}; font-size:1.2rem;">${data.verdict}</strong>\nTime: ${data.time}s`;
         
+        if (data.verdict === 'Accepted') {
+            submitBtn.innerText = "Submitted ✓";
+            // Keep disabled — one submission only
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Submit Solution";
+        }
+        
     } catch(e) {
         consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Server error during submission.</span>`;
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit Solution";
     }
-    
-    submitBtn.disabled = false;
-    submitBtn.innerText = "Submit Solution";
 });

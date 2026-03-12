@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS Submissions (
     language VARCHAR(50) NOT NULL,
     verdict VARCHAR(50) NOT NULL,
     execution_time NUMERIC,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_problem UNIQUE (user_id, problem_id)
 );
 
 -- Note: In a real contest platform, Users would also have authentication, 

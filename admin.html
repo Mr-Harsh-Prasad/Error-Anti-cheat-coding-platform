@@ -123,12 +123,10 @@
               <table style="width:100%; text-align:left; border-collapse:collapse; font-size: 0.9rem;">
                 <thead>
                   <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted);">
-                    <th style="padding:0.5rem;">ID</th>
+                    <th style="padding:0.5rem; width:2rem;"></th>
                     <th style="padding:0.5rem;">Candidate</th>
-                    <th style="padding:0.5rem;">Problem</th>
-                    <th style="padding:0.5rem;">Lang</th>
-                    <th style="padding:0.5rem;">Verdict</th>
-                    <th style="padding:0.5rem;">Time</th>
+                    <th style="padding:0.5rem;">Total Submissions</th>
+                    <th style="padding:0.5rem;">Action</th>
                   </tr>
                 </thead>
                 <tbody id="subTableBody"></tbody>
@@ -159,6 +157,17 @@
 
         </div>
       </main>
+    </div>
+    <div id="codeModal" class="modal-overlay">
+      <div class="modal code-modal">
+        <div class="modal-header">
+          <h3 id="codeModalTitle" style="font-family:var(--font-mono); color:var(--accent-color);">Code</h3>
+          <button class="close-btn" id="closeCodeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <pre id="codeModalContent" class="code-block"><code id="codeModalCode"></code></pre>
+        </div>
+      </div>
     </div>
     <script type="module" src="./admin.js"></script>
   </body>

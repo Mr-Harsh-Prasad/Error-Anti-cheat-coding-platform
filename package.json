@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Error 1.0 Coding Contest Platform",
   "scripts": {
+    "dev": "concurrently \"node api/index.js\" \"vite\" --kill-others",
     "dev:frontend": "vite",
     "build": "vite build",
     "start": "node api/index.js"

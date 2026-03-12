@@ -15,6 +15,10 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+});
+
 // Helper: Check if contest is active dynamically from DB
 const isContestActive = async () => {
     try {
@@ -82,9 +86,20 @@ app.post('/api/run', async (req, res) => {
     const { code, language_id, stdin } = req.body;
     try {
         const apiUrl = process.env.JUDGE0_API_URL || 'http://localhost:2358';
+        const headers = { 'Content-Type': 'application/json' };
+        
+        if (process.env.JUDGE0_API_KEY) {
+            headers['X-RapidAPI-Key'] = process.env.JUDGE0_API_KEY;
+            try {
+                headers['X-RapidAPI-Host'] = new URL(apiUrl).hostname;
+            } catch (e) {
+                console.error("Invalid JUDGE0_API_URL for Host header:", apiUrl);
+            }
+        }
+
         const response = await fetch(`${apiUrl}/submissions?base64_encoded=false&wait=true`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ source_code: code, language_id, stdin })
         });
         if (!response.ok) throw new Error(`Judge0 API error: ${response.status}`);
@@ -103,6 +118,15 @@ app.post('/api/submit', async (req, res) => {
     try {
         const problemRes = await pool.query('SELECT test_cases FROM Problems WHERE id = $1', [problem_id]);
         if (problemRes.rows.length === 0) return res.status(404).json({ error: 'Problem not found' });
+
+        // Enforce one submission per candidate per problem
+        const existing = await pool.query(
+            'SELECT id FROM Submissions WHERE user_id = $1 AND problem_id = $2',
+            [user_id, problem_id]
+        );
+        if (existing.rows.length > 0) {
+            return res.status(409).json({ error: 'You have already submitted this problem.' });
+        }
         
         let verdict = 'Accepted';
         let maxTime = 0.012;
@@ -118,6 +142,10 @@ app.post('/api/submit', async (req, res) => {
         res.json({ submission_id: subRes.rows[0].id, verdict, time: maxTime });
     } catch (err) {
         console.error("Submit Error:", err.message);
+        // Catch DB-level uniqueness violation (race condition safeguard)
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'You have already submitted this problem.' });
+        }
         res.status(500).json({ error: 'Submission Error' });
     }
 });
@@ -211,19 +239,55 @@ app.post('/api/admin/users', async (req, res) => {
     } catch (e) { res.status(500).json({error: e.message}) }
 });
 
-// Admin Get Submissions
+// Admin Get Submissions (grouped by candidate)
 app.post('/api/admin/submissions', async (req, res) => {
     const { admin_id } = req.body;
     try {
         if (!(await checkAdmin(admin_id))) return res.status(403).json({error: 'Unauthorized'});
         const result = await pool.query(`
-            SELECT s.id, u.name as candidate, p.title as problem, s.language, s.verdict, s.submitted_at as created_at
-            FROM Submissions s 
-            JOIN Users u ON s.user_id = u.id 
+            SELECT s.id, u.id as candidate_id, u.name as candidate, p.title as problem,
+                   s.language, s.verdict, s.submitted_at
+            FROM Submissions s
+            JOIN Users u ON s.user_id = u.id
             JOIN Problems p ON s.problem_id = p.id
-            ORDER BY s.submitted_at DESC LIMIT 100
+            ORDER BY u.name ASC, s.submitted_at DESC
+            LIMIT 500
         `);
-        res.json({ success: true, submissions: result.rows });
+
+        // Group rows by candidate
+        const grouped = {};
+        for (const row of result.rows) {
+            if (!grouped[row.candidate_id]) {
+                grouped[row.candidate_id] = {
+                    candidate_id: row.candidate_id,
+                    candidate: row.candidate,
+                    total: 0,
+                    submissions: []
+                };
+            }
+            grouped[row.candidate_id].submissions.push({
+                id: row.id,
+                problem: row.problem,
+                language: row.language,
+                verdict: row.verdict,
+                submitted_at: row.submitted_at
+            });
+            grouped[row.candidate_id].total++;
+        }
+
+        res.json({ success: true, grouped: Object.values(grouped) });
+    } catch (e) { res.status(500).json({error: e.message}) }
+});
+
+// Admin Lazy-Load Code for View Code Modal
+app.get('/api/admin/submissions/:id/code', async (req, res) => {
+    // Simple auth via query param admin_id
+    const admin_id = req.query.admin_id;
+    try {
+        if (!admin_id || !(await checkAdmin(parseInt(admin_id)))) return res.status(403).json({error: 'Unauthorized'});
+        const result = await pool.query('SELECT code, language FROM Submissions WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({error: 'Submission not found'});
+        res.json(result.rows[0]);
     } catch (e) { res.status(500).json({error: e.message}) }
 });
 

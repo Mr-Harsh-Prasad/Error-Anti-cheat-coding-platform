@@ -369,3 +369,82 @@ body {
     padding: 1.5rem;
   }
 }
+
+/* ==========================================
+   LIVE SUBMISSIONS — Expandable Rows
+========================================== */
+
+.candidate-row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s;
+}
+
+.candidate-row:hover {
+  background: rgba(0, 255, 204, 0.04);
+}
+
+.expand-icon {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  transition: transform 0.25s ease;
+  user-select: none;
+}
+
+.expand-icon.expanded {
+  transform: rotate(90deg);
+  color: var(--accent-color);
+}
+
+.detail-row {
+  animation: fadeInRows 0.2s ease;
+}
+
+.sub-detail-row {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: rgba(0, 0, 0, 0.2);
+  transition: background 0.15s;
+}
+
+.sub-detail-row:hover {
+  background: rgba(0, 255, 204, 0.04);
+}
+
+@keyframes fadeInRows {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================
+   VIEW CODE MODAL
+========================================== */
+
+.code-modal {
+  max-width: 860px;
+  width: 95%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.code-modal .modal-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.code-block {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  overflow: auto;
+  max-height: 60vh;
+  white-space: pre;
+  tab-size: 4;
+}
+
