@@ -13,6 +13,16 @@
   --font-mono: 'Fira Code', monospace;
 }
 
+.btn-success {
+    background: var(--success-color);
+    color: #000;
+    cursor: default;
+}
+.problem-card.submitted {
+    border-color: var(--success-color);
+    background: rgba(0, 255, 204, 0.05);
+}
+
 * {
   margin: 0;
   padding: 0;

@@ -136,7 +136,23 @@
 
           <!-- Anti-Cheat Panel -->
           <div class="admin-panel" style="grid-column: 1 / -1;">
-            <h3>Live Anti-Cheat Checker</h3>
+            <h3>Anti-Cheat Summary</h3>
+            <div style="overflow-x:auto; margin-bottom: 2rem;">
+              <table style="width:100%; text-align:left; border-collapse:collapse; font-size: 0.9rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted);">
+                    <th style="padding:0.5rem;">Candidate</th>
+                    <th style="padding:0.5rem;">Tab Switches</th>
+                    <th style="padding:0.5rem;">Fullscreen Exits</th>
+                    <th style="padding:0.5rem;">Resizes</th>
+                    <th style="padding:0.5rem;">Total Violations</th>
+                  </tr>
+                </thead>
+                <tbody id="cheatSummaryBody"></tbody>
+              </table>
+            </div>
+
+            <h3>Live Anti-Cheat Logs</h3>
             <button class="btn btn-danger" id="refreshCheatBtn" style="margin-bottom:1rem; border:1px solid var(--danger-color); color:var(--danger-color); background:transparent;">Refresh Data</button>
             <div style="overflow-x:auto;">
               <table style="width:100%; text-align:left; border-collapse:collapse; font-size: 0.9rem;">

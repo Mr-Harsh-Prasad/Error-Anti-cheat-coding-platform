@@ -263,11 +263,32 @@ async function fetchCheatLogs() {
         });
         const data = await res.json();
         if(data.success) {
+            // Aggregate logs per candidate
+            const summary = {};
+            data.logs.forEach(l => {
+                if (!summary[l.candidate]) {
+                    summary[l.candidate] = { tab_switch: 0, fullscreen_exit: 0, window_resize: 0, total: 0 };
+                }
+                summary[l.candidate][l.event] = (summary[l.candidate][l.event] || 0) + (l.count || 1);
+                summary[l.candidate].total += (l.count || 1);
+            });
+
+            const summaryBody = document.getElementById('cheatSummaryBody');
+            summaryBody.innerHTML = Object.entries(summary).map(([name, stats]) => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:0.5rem; font-weight:600;">${escapeHtml(name)}</td>
+                    <td style="padding:0.5rem;">${stats.tab_switch}</td>
+                    <td style="padding:0.5rem;">${stats.fullscreen_exit}</td>
+                    <td style="padding:0.5rem;">${stats.window_resize}</td>
+                    <td style="padding:0.5rem; font-weight:800; color:${stats.total >= 3 ? 'var(--danger-color)' : 'var(--accent-color)'};">${stats.total}</td>
+                </tr>
+            `).join('');
+
             const tbody = document.getElementById('cheatTableBody');
             tbody.innerHTML = data.logs.map(l => `
                 <tr style="border-bottom:1px solid var(--border-color);">
                     <td style="padding:0.5rem;">#${l.id}</td>
-                    <td style="padding:0.5rem; font-weight:600;">${l.candidate}</td>
+                    <td style="padding:0.5rem; font-weight:600;">${escapeHtml(l.candidate)}</td>
                     <td style="padding:0.5rem;">${l.event}</td>
                     <td style="padding:0.5rem; font-weight:800; color:var(--danger-color);">${l.count}</td>
                     <td style="padding:0.5rem; color:var(--text-muted);">${new Date(l.created_at).toLocaleString()}</td>

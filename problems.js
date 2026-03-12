@@ -4,7 +4,8 @@ const problemsList = document.getElementById('problemsList');
 
 async function loadProblems() {
     try {
-        const res = await fetch(`${API_BASE}/problems`);
+        const userId = localStorage.getItem('contest_user_id');
+        const res = await fetch(`${API_BASE}/problems${userId ? '?user_id=' + userId : ''}`);
         if (res.status === 403) {
             problemsList.innerHTML = `<div class="status-msg">Contest is not active! Please return during the contest window.</div>`;
             return;
@@ -18,13 +19,13 @@ async function loadProblems() {
         }
 
         problemsList.innerHTML = problems.map(p => `
-            <a href="/editor.html?id=${p.id}" class="problem-card">
+            <a href="/editor.html?id=${p.id}" class="problem-card ${p.status === 'Submitted' ? 'submitted' : ''}">
                 <div>
-                    <h3 style="margin-bottom: 0.5rem;">${p.title}</h3>
+                    <h3 style="margin-bottom: 0.5rem;">${p.title} ${p.status === 'Submitted' ? '<span style="color:var(--success-color)">✓</span>' : ''}</h3>
                     <span class="difficulty diff-${p.difficulty.toLowerCase()}">${p.difficulty}</span>
                 </div>
                 <div>
-                    <button class="btn btn-secondary">Solve</button>
+                    <button class="btn ${p.status === 'Submitted' ? 'btn-success' : 'btn-secondary'}">${p.status === 'Submitted' ? 'Submitted' : 'Solve'}</button>
                 </div>
             </a>
         `).join('');

@@ -18,15 +18,73 @@ const submitBtn = document.getElementById('submitBtn');
 const languageSelect = document.getElementById('languageSelect');
 const warningOverlay = document.getElementById('warningOverlay');
 
-// Get Problem ID from URL
-const urlParams = new URLSearchParams(window.location.search);
-const problemId = urlParams.get('id');
-const userId = localStorage.getItem('contest_user_id') || 1; 
+// Problem navigation state
+let problemsList = [];
+let currentProblemIndex = -1;
+
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
 
 if (!problemId) {
     pTitle.innerText = "Error: No problem selected";
 } else {
-    loadProblem();
+    initEditor();
+}
+
+async function initEditor() {
+    await fetchProblems();
+    await loadProblem();
+    await checkSubmissionStatus();
+}
+
+async function fetchProblems() {
+    try {
+        const res = await fetch(`${API_BASE}/problems`);
+        problemsList = await res.json();
+        currentProblemIndex = problemsList.findIndex(p => p.id == problemId);
+        updateNavButtons();
+    } catch (err) {
+        console.error("Failed to fetch problems", err);
+    }
+}
+
+function updateNavButtons() {
+    if (prevBtn) prevBtn.disabled = currentProblemIndex <= 0;
+    if (nextBtn) nextBtn.disabled = currentProblemIndex >= problemsList.length - 1 || currentProblemIndex === -1;
+}
+
+async function loadProblemById(id) {
+    window.location.href = `/editor.html?id=${id}`;
+}
+
+if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+        if (currentProblemIndex > 0) {
+            loadProblemById(problemsList[currentProblemIndex - 1].id);
+        }
+    });
+}
+
+if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+        if (currentProblemIndex < problemsList.length - 1) {
+            loadProblemById(problemsList[currentProblemIndex + 1].id);
+        }
+    });
+}
+
+async function checkSubmissionStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/problems?user_id=${userId}`);
+        const problems = await res.json();
+        const current = problems.find(p => p.id == problemId);
+        if (current && current.status === 'Submitted') {
+            submitBtn.innerText = "Submitted ✓";
+            submitBtn.disabled = true;
+        }
+    } catch (err) {
+        console.error("Failed to check submission status", err);
+    }
 }
 
 async function loadProblem() {
@@ -203,3 +261,43 @@ submitBtn.addEventListener('click', async () => {
         submitBtn.innerText = "Submit Solution";
     }
 });
+
+// Contest Window Enforcement
+async function checkContestStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/time`);
+        const data = await res.json();
+        
+        const now = new Date(data.current_time).getTime();
+        const start = new Date(data.start_time).getTime();
+        const end = new Date(data.end_time).getTime();
+        
+        if (now < start) {
+            runBtn.disabled = true;
+            submitBtn.disabled = true;
+            runBtn.innerText = "Locked";
+            submitBtn.innerText = "Locked";
+            consoleOutput.innerHTML = `<span style="color:var(--accent-color);">Contest has not started yet.</span>`;
+        } else if (now > end) {
+            runBtn.disabled = true;
+            submitBtn.disabled = true;
+            runBtn.innerText = "Ended";
+            submitBtn.innerText = "Ended";
+            consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Contest has ended. Submissions closed.</span>`;
+        } else {
+            // Contest is active - don't re-enable if already submitted successfully
+            if (submitBtn.innerText !== "Submitted ✓" && submitBtn.innerText !== "Already Submitted") {
+                runBtn.disabled = false;
+                submitBtn.disabled = false;
+                runBtn.innerText = "Run Code";
+                submitBtn.innerText = "Submit Solution";
+            }
+        }
+    } catch (e) {
+        console.error("Timer failed", e);
+    }
+}
+
+// Initial check and periodic poll
+checkContestStatus();
+setInterval(checkContestStatus, 30000);

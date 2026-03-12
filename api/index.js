@@ -56,9 +56,22 @@ app.get('/api/time', async (req, res) => {
 // 2. Problems List API
 app.get('/api/problems', async (req, res) => {
     if (!(await isContestActive())) return res.status(403).json({ error: 'Contest Not Active' });
+    const { user_id } = req.query;
     
     try {
-        const result = await pool.query('SELECT id, title, difficulty, points FROM Problems ORDER BY id');
+        let query = 'SELECT id, title, difficulty, points FROM Problems ORDER BY id';
+        if (user_id) {
+            query = `
+                SELECT p.id, p.title, p.difficulty, p.points, 
+                       CASE WHEN s.id IS NOT NULL THEN 'Submitted' ELSE 'Unsolved' END as status
+                FROM Problems p
+                LEFT JOIN Submissions s ON p.id = s.problem_id AND s.user_id = $1
+                ORDER BY p.id
+            `;
+            const result = await pool.query(query, [user_id]);
+            return res.json(result.rows);
+        }
+        const result = await pool.query(query);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: 'Database Error' });
@@ -190,8 +203,13 @@ app.post('/api/auth', async (req, res) => {
 app.post('/api/anti-cheat', async (req, res) => {
     const { user_id, event, count } = req.body;
     try {
-        await pool.query('INSERT INTO AntiCheatLogs (user_id, event, count) VALUES ($1, $2, $3)', [user_id, event, count]);
-        res.json({ success: true });
+        await pool.query('INSERT INTO AntiCheatLogs (user_id, event, count) VALUES ($1, $2, $3)', [user_id, event, count || 1]);
+        
+        // Count total violations for this user
+        const totalResult = await pool.query('SELECT SUM(count) as total FROM AntiCheatLogs WHERE user_id = $1', [user_id]);
+        const total = totalResult.rows[0].total || 0;
+        
+        res.json({ success: true, total_violations: total, restricted: total >= 3 });
     } catch(err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to log' });

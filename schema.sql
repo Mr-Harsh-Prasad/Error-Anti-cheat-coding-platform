@@ -38,5 +38,13 @@ CREATE TABLE IF NOT EXISTS Submissions (
     CONSTRAINT unique_user_problem UNIQUE (user_id, problem_id)
 );
 
+CREATE TABLE IF NOT EXISTS AntiCheatLogs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES Users(id),
+    event VARCHAR(100) NOT NULL,
+    count INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Note: In a real contest platform, Users would also have authentication, 
 -- but following the simplified spec, name and score are enough.
