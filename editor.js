@@ -18,6 +18,11 @@ const submitBtn = document.getElementById('submitBtn');
 const languageSelect = document.getElementById('languageSelect');
 const warningOverlay = document.getElementById('warningOverlay');
 
+// Get Context from URL and Storage
+const urlParams = new URLSearchParams(window.location.search);
+const problemId = urlParams.get('id');
+const userId = localStorage.getItem('contest_user_id') || 1; 
+
 // Problem navigation state
 let problemsList = [];
 let currentProblemIndex = -1;
