@@ -113,12 +113,9 @@ app.post('/api/run', async (req, res) => {
 // 5. Submit Code API
 app.post('/api/submit', async (req, res) => {
     if (!(await isContestActive())) return res.status(403).json({ error: 'Contest Not Active' });
-    const { user_id, problem_id, code, language_id, language_name } = req.body;
+    const { user_id, problem_id, code, language_name, verdict, time } = req.body;
     
     try {
-        const problemRes = await pool.query('SELECT test_cases FROM Problems WHERE id = $1', [problem_id]);
-        if (problemRes.rows.length === 0) return res.status(404).json({ error: 'Problem not found' });
-
         // Enforce one submission per candidate per problem
         const existing = await pool.query(
             'SELECT id FROM Submissions WHERE user_id = $1 AND problem_id = $2',
@@ -128,18 +125,15 @@ app.post('/api/submit', async (req, res) => {
             return res.status(409).json({ error: 'You have already submitted this problem.' });
         }
         
-        let verdict = 'Accepted';
-        let maxTime = 0.012;
-
         const subRes = await pool.query(
             'INSERT INTO Submissions (user_id, problem_id, code, language, verdict, execution_time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-            [user_id, problem_id, code, language_name, verdict, maxTime]
+            [user_id, problem_id, code, language_name, verdict, time || 0]
         );
 
         if (verdict === 'Accepted') {
             await pool.query('UPDATE Users SET score = score + 100 WHERE id = $1', [user_id]);
         }
-        res.json({ submission_id: subRes.rows[0].id, verdict, time: maxTime });
+        res.json({ submission_id: subRes.rows[0].id, verdict, time });
     } catch (err) {
         console.error("Submit Error:", err.message);
         // Catch DB-level uniqueness violation (race condition safeguard)

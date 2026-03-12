@@ -80,6 +80,7 @@ require(['vs/editor/editor.main'], function() {
         if(e.target.value === '50') lang = 'c';
         else if(e.target.value === '54') lang = 'cpp';
         else if(e.target.value === '62') lang = 'java';
+        else if(e.target.value === '63') lang = 'javascript';
         
         monaco.editor.setModelLanguage(editor.getModel(), lang);
     });
@@ -106,36 +107,33 @@ document.addEventListener('visibilitychange', () => {
 runBtn.addEventListener('click', async () => {
     runBtn.disabled = true;
     runBtn.innerText = "Running...";
-    consoleOutput.innerHTML += `\n\n<span style="color:var(--accent-color);">Compiling and executing...</span>`;
+    consoleOutput.innerHTML += `\n\n<span style="color:var(--accent-color);">Executing on Judge0...</span>`;
     terminalConsole.scrollTop = terminalConsole.scrollHeight;
     
     try {
-        const res = await fetch(`${API_BASE}/run`, {
+        const res = await fetch(`https://ce.judge0.com/submissions?base64_encoded=false&wait=true`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                code: editor.getValue(), 
+                source_code: editor.getValue(), 
                 language_id: parseInt(languageSelect.value),
                 stdin: terminalInput.value
             })
         });
         const data = await res.json();
         
-        if (data.error) {
-           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Server Error:</strong>\n${data.error}`;
-        } else if(data.stderr) {
+        if (data.stderr) {
            consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Error / Stderr:</strong>\n${data.stderr}`;
         } else if (data.compile_output) {
            consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Compilation Error:</strong>\n${data.compile_output}`;
         } else if (data.stdout !== null && data.stdout !== undefined) {
            consoleOutput.innerHTML += `\n\n<strong style="color:var(--success-color);">Output:</strong>\n${data.stdout}\n<span style="color:var(--text-muted); font-size:0.8em;">Execution Time: ${data.time}s</span>`;
-        } else if (data.message) {
-           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Message:</strong>\n${data.message}`;
         } else {
-           consoleOutput.innerHTML += `\n\n<strong style="color:var(--danger-color);">Status:</strong> ${data.status ? data.status.description : 'Unknown Error'}\nNo output returned.`;
+           const desc = data.status ? data.status.description : 'Unknown Status';
+           consoleOutput.innerHTML += `\n\n<strong style="color:var(--accent-color);">Status:</strong> ${desc}`;
         }
     } catch (e) {
-        consoleOutput.innerHTML += `\n\n<span style="color:var(--danger-color);">Server error or Judge0 API is unreachable.</span>`;
+        consoleOutput.innerHTML += `\n\n<span style="color:var(--danger-color);">Judge0 API is unreachable or returned an error.</span>`;
     }
     
     terminalConsole.scrollTop = terminalConsole.scrollHeight;
@@ -146,9 +144,28 @@ runBtn.addEventListener('click', async () => {
 submitBtn.addEventListener('click', async () => {
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
-    consoleOutput.innerText = "Submitting code against hidden test cases...\n";
+    consoleOutput.innerHTML = `<span style="color:var(--accent-color);">Executing on Judge0...</span>\n`;
     
     try {
+        // 1. Run on Judge0
+        const judgeRes = await fetch(`https://ce.judge0.com/submissions?base64_encoded=false&wait=true`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                source_code: editor.getValue(), 
+                language_id: parseInt(languageSelect.value),
+                stdin: terminalInput.value // Optional: use actual problem test cases if available in frontend
+            })
+        });
+        const judgeData = await judgeRes.json();
+        
+        let verdict = judgeData.status ? judgeData.status.description : 'Error';
+        let time = judgeData.time || 0;
+
+        // 2. Clear output and show submitting
+        consoleOutput.innerHTML += `Judge0 Result: ${verdict}\nSaving submission...`;
+
+        // 3. Save to Database
         const res = await fetch(`${API_BASE}/submit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -157,32 +174,31 @@ submitBtn.addEventListener('click', async () => {
                 problem_id: problemId,
                 code: editor.getValue(),
                 language_id: parseInt(languageSelect.value),
-                language_name: languageSelect.options[languageSelect.selectedIndex].text
+                language_name: languageSelect.options[languageSelect.selectedIndex].text,
+                verdict: verdict,
+                time: time
             })
         });
         const data = await res.json();
         
         if (res.status === 409) {
-            // Already submitted — show error and keep button permanently disabled
             consoleOutput.innerHTML = `<span style="color:var(--danger-color); font-size:1.1rem; font-weight:600;">⚠ ${data.error}</span>`;
             submitBtn.innerText = "Already Submitted";
-            // Keep button disabled
             return;
         }
 
-        let color = data.verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)';
-        consoleOutput.innerHTML = `Verdict: <strong style="color:${color}; font-size:1.2rem;">${data.verdict}</strong>\nTime: ${data.time}s`;
+        let color = verdict === 'Accepted' ? 'var(--success-color)' : 'var(--danger-color)';
+        consoleOutput.innerHTML = `Verdict: <strong style="color:${color}; font-size:1.2rem;">${verdict}</strong>\nTime: ${time}s`;
         
-        if (data.verdict === 'Accepted') {
+        if (verdict === 'Accepted') {
             submitBtn.innerText = "Submitted ✓";
-            // Keep disabled — one submission only
         } else {
             submitBtn.disabled = false;
             submitBtn.innerText = "Submit Solution";
         }
         
     } catch(e) {
-        consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Server error during submission.</span>`;
+        consoleOutput.innerHTML = `<span style="color:var(--danger-color);">Error during submission process.</span>`;
         submitBtn.disabled = false;
         submitBtn.innerText = "Submit Solution";
     }
