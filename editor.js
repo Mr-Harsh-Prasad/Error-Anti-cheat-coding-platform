@@ -120,6 +120,10 @@ async function loadProblem() {
     }
 }
 
+// Anti-Cheat System
+let violations = 0;
+const MAX_VIOLATIONS = 3;
+
 // Monaco Editor Initialization
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
 require(['vs/editor/editor.main'], function() {
@@ -133,7 +137,6 @@ require(['vs/editor/editor.main'], function() {
     
     // Anti-Cheat: Disable Paste via Monaco configuration
     editor.onKeyDown(function(e) {
-        // block ctrl+v and cmd+v
         if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
             e.preventDefault();
             consoleOutput.innerHTML = `<span style="color:var(--danger-color);">[ANTI-CHEAT] Paste disabled.</span>`;
@@ -144,27 +147,84 @@ require(['vs/editor/editor.main'], function() {
         let lang = 'python';
         if(e.target.value === '50') lang = 'c';
         else if(e.target.value === '54') lang = 'cpp';
-        
         monaco.editor.setModelLanguage(editor.getModel(), lang);
     });
+
+    // Initial check for split screen
+    checkWindowSize();
+});
+
+async function logViolation(type) {
+    violations++;
+    const message = type === 'tab_switch' ? "Tab switching or leaving the page is prohibited!" : 
+                    type === 'fullscreen_exit' ? "Exiting fullscreen is prohibited!" :
+                    "Window resizing or split-screen is prohibited!";
+    
+    warningOverlay.querySelector('p').innerText = `${message} Violation ${violations}/${MAX_VIOLATIONS}. Further violations will lead to disqualification.`;
+    warningOverlay.classList.add('active');
+
+    try {
+        const res = await fetch(`${API_BASE}/anti-cheat`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: parseInt(userId), event: type, count: 1 })
+        });
+        const data = await res.json();
+        if (data.restricted) {
+            alert("Disqualified! You have exceeded the violation limit.");
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Disqualified";
+            runBtn.disabled = true;
+            editor.updateOptions({ readOnly: true });
+        }
+    } catch (e) {
+        console.error("Failed to log violation", e);
+    }
+}
+
+// 1. Fullscreen Enforcement
+function enterFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+    }
+}
+
+document.addEventListener('click', () => {
+    if (violations < MAX_VIOLATIONS) enterFullscreen();
+}, { once: true });
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && violations < MAX_VIOLATIONS) {
+        logViolation('fullscreen_exit');
+    }
+});
+
+// 2. Tab Switching Detection
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && violations < MAX_VIOLATIONS) {
+        logViolation('tab_switch');
+    }
+});
+
+// 3. Window Resize / Split Screen Detection
+function checkWindowSize() {
+    // If width is less than 85% of available screen width, it's likely split screen or small window
+    const isSmall = window.innerWidth < (screen.availWidth * 0.85);
+    if (!document.fullscreenElement && isSmall && violations < MAX_VIOLATIONS) {
+        logViolation('window_resize');
+    }
+}
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(checkWindowSize, 1000);
 });
 
 // Anti-Cheat: Context menu right click disable
 document.addEventListener('contextmenu', event => event.preventDefault());
-
-// Anti-Cheat: Tab Switch Detection
-let tabSwitches = 0;
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        tabSwitches++;
-        warningOverlay.classList.add('active');
-        fetch(`${API_BASE}/anti-cheat`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user_id: userId, event: 'tab_switch', count: tabSwitches })
-        }).catch(e=>console.log(e));
-    }
-});
 
 // Action Handlers
 runBtn.addEventListener('click', async () => {
