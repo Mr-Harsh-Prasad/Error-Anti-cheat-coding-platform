@@ -21,7 +21,8 @@ async function fetchLeaderboard() {
                 <tr>
                     <td class="${rankClass}">#${user.rank}</td>
                     <td style="font-weight:600;">${user.name}</td>
-                    <td style="font-family:var(--font-mono); color:var(--accent-color);">${user.score}</td>
+                    <td style="text-align:center;">${user.problems_solved}</td>
+                    <td style="font-family:var(--font-mono); color:var(--accent-color); font-weight:bold;">${user.score}</td>
                 </tr>
             `;
         }).join('');

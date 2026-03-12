@@ -12,12 +12,18 @@ CREATE TABLE IF NOT EXISTS Problems (
     title VARCHAR(255) NOT NULL,
     difficulty VARCHAR(50) NOT NULL,
     description TEXT NOT NULL,
+    points INTEGER DEFAULT 0,
     input_format TEXT NOT NULL,
     output_format TEXT NOT NULL,
     constraints TEXT NOT NULL,
     example_in TEXT NOT NULL,
     example_out TEXT NOT NULL,
     test_cases JSON NOT NULL -- JSON array of objects: { "in": "...", "out": "..." }
+);
+
+CREATE TABLE IF NOT EXISTS Settings (
+    key VARCHAR(255) PRIMARY KEY,
+    value TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Submissions (

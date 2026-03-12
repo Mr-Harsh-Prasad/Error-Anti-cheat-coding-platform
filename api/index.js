@@ -58,7 +58,7 @@ app.get('/api/problems', async (req, res) => {
     if (!(await isContestActive())) return res.status(403).json({ error: 'Contest Not Active' });
     
     try {
-        const result = await pool.query('SELECT id, title, difficulty FROM Problems ORDER BY id');
+        const result = await pool.query('SELECT id, title, difficulty, points FROM Problems ORDER BY id');
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: 'Database Error' });
@@ -70,7 +70,7 @@ app.get('/api/problems/:id', async (req, res) => {
     if (!(await isContestActive())) return res.status(403).json({ error: 'Contest Not Active' });
     try {
         const result = await pool.query(
-            'SELECT id, title, difficulty, description, input_format, output_format, constraints, example_in, example_out FROM Problems WHERE id = $1',
+            'SELECT id, title, difficulty, description, points, input_format, output_format, constraints, example_in, example_out FROM Problems WHERE id = $1',
             [req.params.id]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Problem not found' });
@@ -125,13 +125,17 @@ app.post('/api/submit', async (req, res) => {
             return res.status(409).json({ error: 'You have already submitted this problem.' });
         }
         
+        const problemRes = await pool.query('SELECT points FROM Problems WHERE id = $1', [problem_id]);
+        if (problemRes.rows.length === 0) return res.status(404).json({ error: 'Problem not found' });
+        const points = problemRes.rows[0].points || 0;
+
         const subRes = await pool.query(
             'INSERT INTO Submissions (user_id, problem_id, code, language, verdict, execution_time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
             [user_id, problem_id, code, language_name, verdict, time || 0]
         );
 
         if (verdict === 'Accepted') {
-            await pool.query('UPDATE Users SET score = score + 100 WHERE id = $1', [user_id]);
+            await pool.query('UPDATE Users SET score = score + $1 WHERE id = $2', [points, user_id]);
         }
         res.json({ submission_id: subRes.rows[0].id, verdict, time });
     } catch (err) {
@@ -147,9 +151,23 @@ app.post('/api/submit', async (req, res) => {
 // 6. Leaderboard API
 app.get('/api/leaderboard', async (req, res) => {
     try {
-        const result = await pool.query('SELECT name, score FROM Users WHERE is_admin=false ORDER BY score DESC, created_at ASC LIMIT 100');
+        const query = `
+            SELECT 
+                u.name, 
+                u.score, 
+                COUNT(s.id) FILTER (WHERE s.verdict = 'Accepted') as problems_solved,
+                MAX(s.submitted_at) as last_submission
+            FROM Users u
+            LEFT JOIN Submissions s ON u.id = s.user_id
+            WHERE u.is_admin = false
+            GROUP BY u.id, u.name, u.score
+            ORDER BY u.score DESC, last_submission ASC, u.name ASC
+            LIMIT 100
+        `;
+        const result = await pool.query(query);
         res.json(result.rows.map((row, index) => ({ rank: index + 1, ...row })));
     } catch (err) {
+        console.error("Leaderboard Error:", err);
         res.status(500).json({ error: 'Database Error' });
     }
 });

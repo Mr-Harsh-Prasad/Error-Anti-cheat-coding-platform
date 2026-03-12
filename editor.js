@@ -9,6 +9,7 @@ const pOutFormat = document.getElementById('pOutFormat');
 const pConstraints = document.getElementById('pConstraints');
 const pExIn = document.getElementById('pExIn');
 const pExOut = document.getElementById('pExOut');
+const pPoints = document.getElementById('pPoints');
 const terminalInput = document.getElementById('terminalInput');
 const consoleOutput = document.getElementById('consoleOutput');
 const terminalConsole = document.getElementById('terminalConsole');
@@ -48,6 +49,7 @@ async function loadProblem() {
         pConstraints.innerText = problem.constraints;
         pExIn.innerText = problem.example_in;
         pExOut.innerText = problem.example_out;
+        pPoints.innerText = `${problem.points || 0} Points`;
         
     } catch (err) {
          pTitle.innerText = "Failed to load problem.";
@@ -79,8 +81,6 @@ require(['vs/editor/editor.main'], function() {
         let lang = 'python';
         if(e.target.value === '50') lang = 'c';
         else if(e.target.value === '54') lang = 'cpp';
-        else if(e.target.value === '62') lang = 'java';
-        else if(e.target.value === '63') lang = 'javascript';
         
         monaco.editor.setModelLanguage(editor.getModel(), lang);
     });
