@@ -1,3 +1,4 @@
+import './matrix-rain.js';
 const API_BASE = '/api';
 
 const rulesModal = document.getElementById('rulesModal');
