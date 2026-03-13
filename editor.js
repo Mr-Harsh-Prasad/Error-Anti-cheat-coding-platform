@@ -20,7 +20,7 @@ const warningOverlay = document.getElementById('warningOverlay');
 
 // Get Context from URL and Storage
 const urlParams = new URLSearchParams(window.location.search);
-const problemId = urlParams.get('id');
+let problemId = urlParams.get('id');
 const userId = localStorage.getItem('contest_user_id') || 1; 
 
 // Problem navigation state
@@ -59,8 +59,52 @@ function updateNavButtons() {
 }
 
 async function loadProblemById(id) {
-    window.location.href = `/editor.html?id=${id}`;
+    if (id == problemId) return;
+
+    // Prevent full page reload to maintain fullscreen & anti-cheat status
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('id', id);
+    window.history.pushState({ path: newUrl.href }, '', newUrl.href);
+
+    problemId = id;
+    currentProblemIndex = problemsList.findIndex(p => p.id == problemId);
+    
+    updateNavButtons();
+    
+    // Reset UI state for next problem
+    submitBtn.innerText = "Submit Solution";
+    submitBtn.disabled = false;
+    consoleOutput.innerHTML = 'Welcome to Error 1.0 Terminal.';
+    
+    if (editor) {
+        editor.setValue('# Write your solution here\n# Do not cheat!\n');
+    }
+    
+    await loadProblem();
+    await checkSubmissionStatus();
 }
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (id && id !== problemId) {
+        problemId = id;
+        currentProblemIndex = problemsList.findIndex(p => p.id == problemId);
+        updateNavButtons();
+        
+        submitBtn.innerText = "Submit Solution";
+        submitBtn.disabled = false;
+        consoleOutput.innerHTML = 'Welcome to Error 1.0 Terminal.';
+        
+        if (editor) {
+            editor.setValue('# Write your solution here\n# Do not cheat!\n');
+        }
+        
+        await loadProblem();
+        await checkSubmissionStatus();
+    }
+});
 
 if (prevBtn) {
     prevBtn.addEventListener('click', () => {
