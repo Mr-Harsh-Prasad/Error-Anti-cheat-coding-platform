@@ -45,6 +45,7 @@ body {
   filter: blur(100px);
   z-index: -1;
   opacity: 0.5;
+  animation: pulseGlow 5s infinite alternate ease-in-out;
 }
 
 .glow-1 {
@@ -80,6 +81,7 @@ body {
   padding: 1rem 0;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 4rem;
+  animation: fadeInDown 0.8s ease-out;
 }
 
 .logo .neon-text {
@@ -115,6 +117,7 @@ body {
 
 .hero {
   margin-bottom: 4rem;
+  animation: fadeInUp 1s ease-out;
 }
 
 .subtitle {
@@ -155,6 +158,7 @@ body {
   width: 100%;
   max-width: 800px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  animation: fadeInUp 1.2s ease-out;
 }
 
 #timerLabel {
@@ -211,7 +215,7 @@ body {
   font-weight: 600;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   font-family: var(--font-main);
 }
 
@@ -228,8 +232,8 @@ body {
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 0 25px rgba(0, 255, 204, 0.8);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 0 35px rgba(0, 255, 204, 0.8);
 }
 
 .btn-secondary {
@@ -241,6 +245,7 @@ body {
 .btn-secondary:hover {
   background-color: rgba(255,255,255,0.05);
   border-color: var(--text-main);
+  transform: translateY(-4px);
 }
 
 .status-msg {
@@ -470,5 +475,42 @@ body {
   z-index: -2;
   pointer-events: none;
   opacity: 0.35;
+  animation: fadeIn 2s ease-in;
+}
+
+/* ==========================================
+   KEYFRAME ANIMATIONS
+========================================== */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 0.35; }
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.1); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 0.4; }
 }
 
