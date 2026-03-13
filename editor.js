@@ -191,6 +191,10 @@ require(['vs/editor/editor.main'], function() {
         let lang = 'python';
         if(e.target.value === '50') lang = 'c';
         else if(e.target.value === '54') lang = 'cpp';
+        else if(e.target.value === '62') lang = 'java';
+        else if(e.target.value === '63') lang = 'javascript';
+        else if(e.target.value === '51') lang = 'csharp';
+        else if(e.target.value === '78') lang = 'kotlin';
         monaco.editor.setModelLanguage(editor.getModel(), lang);
     });
 
